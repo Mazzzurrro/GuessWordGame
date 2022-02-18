@@ -1,0 +1,54 @@
+#:import TextInput kivy.uix.textinput.TextInput
+<GuessWord>   
+    RelativeLayout:
+        size: root.width, root.height
+        Label:
+            pos_hint: {'center_x':0.5,'y':0.7}
+            size_hint: 0.2,0.2
+            text: "Guess the word!"
+        Button:
+            pos_hint: {'center_x':0.5,'y':0.67}
+            size_hint: 0.5,0.1
+            text: "Click here to start!"
+            on_press: root.RandomWord()
+        GridLayout:
+            id: word
+            cols:5
+            pos_hint:{'center_x':0.5,'y':0.5}
+            size_hint:(1,0.15)                    
+            TextInput:
+                halign: "center"
+                font_size: 70
+                id: t1
+            TextInput:
+                halign: "center"
+                font_size: 70
+                id: t2
+            TextInput:
+                halign: "center"
+                font_size: 70
+                id: t3
+            TextInput:
+                halign: "center"
+                font_size: 70
+                id: t4
+            TextInput:
+                halign: "center"
+                font_size: 70
+                id: t5
+        GridLayout:
+            cols:1
+            pos_hint:{'center_x':0.5,'y':0.3}
+            size_hint:(1,0.2)
+            Button: 
+                pos_hint:{'center_x':0.5,'y':0.4}
+                text: "Check if it's your word!"
+                on_press: root.Check()
+        Label:
+            pos_hint:{'center_x':0.5,'y':-0.3}
+            id: OUTPUT
+            
+        
+        
+            
+        

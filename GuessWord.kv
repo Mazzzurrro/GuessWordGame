@@ -10,7 +10,7 @@
             pos_hint: {'center_x':0.5,'y':0.67}
             size_hint: 0.5,0.1
             text: "Click here to start!"
-            on_press: root.RandomWord()
+            on_press: root.StartGame()
         GridLayout:
             id: word
             cols:5
@@ -20,22 +20,40 @@
                 halign: "center"
                 font_size: 70
                 id: t1
+                multiline: False
+                focus: True
+                on_text:
+                    t2.focus = True                    
             TextInput:
                 halign: "center"
                 font_size: 70
-                id: t2
+                id: t2 
+                multiline: False
+                on_text: 
+                    t3.focus = True               
             TextInput:
                 halign: "center"
                 font_size: 70
                 id: t3
+                multiline: False
+                on_text: t4.focus = True 
             TextInput:
                 halign: "center"
                 font_size: 70
                 id: t4
+                multiline: False
+                on_text: t5.focus = True 
             TextInput:
                 halign: "center"
                 font_size: 70
                 id: t5
+                multiline: False
+                on_text:
+                    root.Check()
+                    root.ShowPreviousWord()
+                    if root.accurateletters!=5: root.ClearLetters()
+                    if root.accurateletters==5: root.Win()
+                    t1.focus = True
         GridLayout:
             cols:1
             pos_hint:{'center_x':0.5,'y':0.3}
@@ -43,10 +61,16 @@
             Button: 
                 pos_hint:{'center_x':0.5,'y':0.4}
                 text: "Check if it's your word!"
-                on_press: root.Check()
+                on_press: 
+                    root.Check()
+                    root.ShowPreviousWord()
+                    
+                    
         Label:
-            pos_hint:{'center_x':0.5,'y':-0.3}
+            pos_hint:{'center_x':0.5,'y':-0.35}
             id: OUTPUT
+            markup: True
+
             
         
         

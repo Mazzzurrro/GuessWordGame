@@ -1,16 +1,23 @@
 #:import TextInput kivy.uix.textinput.TextInput
 <GuessWord>   
     RelativeLayout:
+        id:rootlayout
         size: root.width, root.height
         Label:
-            pos_hint: {'center_x':0.5,'y':0.7}
+            id: welcometext
+            pos_hint: {'center_x':0.5,'y':0.86}
             size_hint: 0.2,0.2
-            text: "Guess the word!"
+            text: root.welcometext 
+        Label:
+            pos_hint: {'center_x':0.5,'y':0.75}
+            size_hint: 0.2,0.2
+            id: BESTOPTIONS
+            text: root.entrophyvaluesbest      
         Button:
             pos_hint: {'center_x':0.5,'y':0.67}
             size_hint: 0.5,0.1
             text: "Click here to start!"
-            on_press: root.StartGame()
+            on_release: root.StartGame()
         GridLayout:
             id: word
             cols:5
@@ -49,10 +56,11 @@
                 id: t5
                 multiline: False
                 on_text:
-                    root.Check()
+                    if t5.text!="": root.Check()
+                    BESTOPTIONS.text=""
                     root.ShowPreviousWord()
-                    if root.accurateletters!=5: root.ClearLetters()
                     if root.accurateletters==5: root.Win()
+                    if root.accurateletters!=5: root.ClearLetters()
                     t1.focus = True
         GridLayout:
             cols:1

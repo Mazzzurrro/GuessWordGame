@@ -5791,6 +5791,7 @@ class GuessWord(Widget):
 "rumba",
 "biffy",
 "pupal"]   
+    wordsentrophy=words.copy()
     word=choice(words)
     listofguesses=[]
     accuratecolor=[]
@@ -11553,9 +11554,16 @@ class GuessWord(Widget):
     ('ahhhh', 2.038330183956236),
     ('immix', 2.0131455608775286),
     ('ohhhh', 1.8402885610599822)]
+    entrophyvaluescopy=entrophyvalues.copy()
     newline='\n'
     entrophyval=""
     welcometext=StringProperty('Guess the word!')
+    expectedinformations=[]
+    expectedinformation=0
+    uncertaintynumber=math.log(len(words))/math.log(2)
+    uncertainty=f'Possibilities:{len(words)} Uncertainty:{math.log(len(words))/math.log(2)}\n'
+    wordcount=StringProperty(uncertainty)
+    actualinformations=[]
     for i in range(5):
         entrophyval+=f'{i+1}: {entrophyvalues[i][0]} - {round(entrophyvalues[i][1],3)}{newline}'
     entrophyvaluesbest=StringProperty(entrophyval)
@@ -11592,9 +11600,18 @@ class GuessWord(Widget):
             letter.text=""
         
     def StartGame(self):
+        self.wordcount=f'Possibilities:{len(self.words)} Uncertainty:{math.log(len(self.words))/math.log(2)}'
+        self.wordsentrophy=self.words.copy()
+        self.entrophyvaluescopy=self.entrophyvalues
         self.word=choice(self.words)
-        self.entrophyvaluesbest=""
-        self.word=choice(self.words)
+        entrophyvaluesbest=""
+        newline='\n'        
+        for i in range(5):
+            try:
+                entrophyvaluesbest+=f'{i+1}: {self.entrophyvalues[i][0]} - {round(self.entrophyvalues[i][1],3)}{newline}'
+            except IndexError:
+                pass
+        self.entrophyvaluesbest=entrophyvaluesbest
         l1=self.ids['OUTPUT']
         l1.text=""
         listofletters=[]
@@ -11624,16 +11641,16 @@ class GuessWord(Widget):
         else:
             coloredstring = "".join((set_color(l, c) for l, c in zip(string, self.accuratecolor)))
             self.listofguesses.append(coloredstring)
-            attempts=""
+            
+            
+            
+            
+            attempts=""           
             for i in range(len(self.listofguesses)):
-                attempts+=f'Attempt {i+1}: {self.listofguesses[i]}\n'           
+                attempts+=f'Attempt {i+1}: {self.listofguesses[i]} Expected information: {self.expectedinformations[i]} Actual gained information: {self.actualinformations[i]}\n'           
             l1=self.ids['OUTPUT']
             l1.text=attempts
         
-    def Win(self):
-        self.entrophyvaluesbest=""
-        l1=self.ids['OUTPUT']
-        l1.text+='You have won!'
         
     def Check(self):
         self.welcometext=""
@@ -11672,13 +11689,29 @@ class GuessWord(Widget):
         self.accurateletters=accurateletters        
         self.accuratecolor=accuratecolor
         
-        self.words=self.DeleteNotPossiblePattern(self.answer,self.words,accuratecolor)
-        self.entrophyvalues=self.EntrophyCount(self.words)
+        #Put expected information
+        informations=dict(self.entrophyvaluescopy)
+        self.expectedinformation=round(informations[self.answer],3)
+        self.expectedinformations.append(self.expectedinformation)
+        #Put actual information
+        actualcombination=""
+        for i in accuratecolor:
+            actualcombination+=i
+        self.actualcombination=actualcombination
+        
+       
+        self.wordsentrophy=self.DeleteNotPossiblePattern(self.answer,self.wordsentrophy,accuratecolor)
+        uncertainty=math.log(len(self.wordsentrophy))/math.log(2)
+        actualinformation=self.uncertaintynumber-uncertainty
+        self.actualinformations.append(actualinformation)
+        self.uncertaintynumber=uncertainty
+        self.wordcount+=f'Possibilities:{len(self.wordsentrophy)} Uncertainty:{str(math.log(len(self.wordsentrophy))/math.log(2))}\n'
+        self.entrophyvaluescopy=self.EntrophyCount(self.wordsentrophy)
         entrophyvaluesbest=""
         newline='\n'
         for i in range(5):
             try:
-                entrophyvaluesbest+=f'{i+1}: {self.entrophyvalues[i][0]} - {round(self.entrophyvalues[i][1],3)}{newline}'
+                entrophyvaluesbest+=f'{i+1}: {self.entrophyvaluescopy[i][0]} - {round(self.entrophyvaluescopy[i][1],3)}{newline}'
             except IndexError:
                 pass
         self.entrophyvaluesbest=entrophyvaluesbest
@@ -11708,14 +11741,17 @@ class GuessWord(Widget):
 
     def EntrophyCount(self,lista):
         entrophies={}
+        #Compare patterns of j word to list of i-words
         for j in range(len(lista)):
             for i in lista:
                 pattern=self.SetPattern(lista[j],i)
                 #Add one pattern which occured
                 self.NumberofPatterns(pattern)
             print(f'Finished {j+1}/{len(lista)} words')
+            #Count probability of pattern
             for k in self.dictionaryofoptions:
                 self.dictionaryofoptions[k]=self.dictionaryofoptions[k]/len(lista)
+            #Count expected entrophy for each word
             entrophy=0
             for k in self.dictionaryofoptions:
                 if self.dictionaryofoptions[k]!=0:

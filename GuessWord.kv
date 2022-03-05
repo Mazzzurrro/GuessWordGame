@@ -3,16 +3,17 @@
     RelativeLayout:
         id:rootlayout
         size: root.width, root.height
-        Label:
-            id: welcometext
-            pos_hint: {'center_x':0.5,'y':0.86}
-            size_hint: 0.2,0.2
-            text: root.welcometext 
-        Label:
-            pos_hint: {'center_x':0.5,'y':0.75}
-            size_hint: 0.2,0.2
-            id: BESTOPTIONS
-            text: root.entrophyvaluesbest      
+        BoxLayout:
+            Label:
+                id: wordcount
+                pos_hint: {'center_x':0.5,'y':0.75}
+                size_hint: 0.2,0.2
+                text: root.wordcount 
+            Label:
+                pos_hint: {'center_x':0.5,'y':0.75}
+                size_hint: 0.2,0.2
+                id: BESTOPTIONS
+                text: root.entrophyvaluesbest      
         Button:
             pos_hint: {'center_x':0.5,'y':0.67}
             size_hint: 0.5,0.1
@@ -59,7 +60,6 @@
                     if t5.text!="": root.Check()
                     BESTOPTIONS.text=""
                     root.ShowPreviousWord()
-                    if root.accurateletters==5: root.Win()
                     if root.accurateletters!=5: root.ClearLetters()
                     t1.focus = True
         GridLayout:

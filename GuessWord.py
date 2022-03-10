@@ -16,13 +16,15 @@ from kivy.app import App
 from random import choice
 import math
 from kivy.properties import StringProperty
+import string 
 Builder.load_file('GuessWord.kv')
+letters= string.ascii_lowercase
 
 def set_color(letter, color):
     COLORS_DICT  = {"W" : "ffffff", "Y" : "ffff00", "G" : "00ff00"}
     c = COLORS_DICT.get(color, "W")
     return f"[color={c}]{letter}[/color]"
-    
+   
 class GuessWord(Widget):
     
     """
@@ -11553,8 +11555,8 @@ class GuessWord(Widget):
     ('gyppy', 2.2117741671516735),
     ('ahhhh', 2.038330183956236),
     ('immix', 2.0131455608775286),
-    ('ohhhh', 1.8402885610599822)]
-    entrophyvaluescopy=entrophyvalues.copy()
+    ('ohhhh', 1.8402885610599822)]    
+    
     newline='\n'
     entrophyval=""
     welcometext=StringProperty('Guess the word!')
@@ -11587,7 +11589,13 @@ class GuessWord(Widget):
         listofoptionsstring.append(string)
 
     dictionaryofoptions= {i : 0 for i in listofoptionsstring}
-
+    
+    def SetDict(self,string):
+        dictletters={letter: 0 for letter in letters }
+        for i in range(len(string)):
+            dictletters[string[i]]+=1
+        return dictletters
+    
     def ClearLetters(self):
         t1=self.ids['t1']
         t2=self.ids['t2']
@@ -11600,7 +11608,9 @@ class GuessWord(Widget):
             letter.text=""
         
     def StartGame(self):
-        self.wordcount=f'Possibilities:{len(self.words)} Uncertainty:{math.log(len(self.words))/math.log(2)}'
+        self.uncertaintynumber=math.log(len(self.words))/math.log(2)
+        self.actualinformations=[]
+        self.wordcount=f'Possibilities:{len(self.words)} Uncertainty:{math.log(len(self.words))/math.log(2)}\n'
         self.wordsentrophy=self.words.copy()
         self.entrophyvaluescopy=self.entrophyvalues
         self.word=choice(self.words)
@@ -11647,7 +11657,7 @@ class GuessWord(Widget):
             
             attempts=""           
             for i in range(len(self.listofguesses)):
-                attempts+=f'Attempt {i+1}: {self.listofguesses[i]} Expected information: {self.expectedinformations[i]} Actual gained information: {self.actualinformations[i]}\n'           
+                attempts+=f'Attempt {i+1}: {self.listofguesses[i]} Actual gained information: {self.actualinformations[i]}\n'           
             l1=self.ids['OUTPUT']
             l1.text=attempts
         
@@ -11689,10 +11699,6 @@ class GuessWord(Widget):
         self.accurateletters=accurateletters        
         self.accuratecolor=accuratecolor
         
-        #Put expected information
-        informations=dict(self.entrophyvaluescopy)
-        self.expectedinformation=round(informations[self.answer],3)
-        self.expectedinformations.append(self.expectedinformation)
         #Put actual information
         actualcombination=""
         for i in accuratecolor:
@@ -11702,9 +11708,11 @@ class GuessWord(Widget):
        
         self.wordsentrophy=self.DeleteNotPossiblePattern(self.answer,self.wordsentrophy,accuratecolor)
         uncertainty=math.log(len(self.wordsentrophy))/math.log(2)
+        print("Informacja",self.actualinformations)
+        print("Niepewnosc",self.uncertaintynumber)
         actualinformation=self.uncertaintynumber-uncertainty
-        self.actualinformations.append(actualinformation)
         self.uncertaintynumber=uncertainty
+        self.actualinformations.append(actualinformation) 
         self.wordcount+=f'Possibilities:{len(self.wordsentrophy)} Uncertainty:{str(math.log(len(self.wordsentrophy))/math.log(2))}\n'
         self.entrophyvaluescopy=self.EntrophyCount(self.wordsentrophy)
         entrophyvaluesbest=""
@@ -11723,14 +11731,15 @@ class GuessWord(Widget):
     #SET pattern between solution and guess word
     def SetPattern(self,string,solution):
         accuratecolor=""
-        for i in range(len(string)):
-            if string[i]=="":
-                accuratecolor+="W"
-            elif string[i] in solution:
-                if string[i] == solution[i]:
+        letters=self.SetDict(solution)
+        for i in range(len(solution)):
+            if letters[string[i]]>0:
+                if string[i]==solution[i]:
                     accuratecolor+="G"
+                    letters[string[i]]-=1
                 else:
                     accuratecolor+="Y"
+                    letters[string[i]]-=1
             else:
                 accuratecolor+="W"
         return accuratecolor
@@ -11762,7 +11771,7 @@ class GuessWord(Widget):
         
         sort_orders = sorted(entrophies.items(), key=lambda x: x[1], reverse=True)
         return sort_orders
-
+    
     def DeleteNotPossiblePattern(self,guess,possibilities,pattern):
         p=possibilities.copy()
         print(guess)
@@ -11822,7 +11831,7 @@ class GuessWord(Widget):
                             p.remove(j)
                         except ValueError:
                             pass
-            if pattern[i]=="W":
+            elif pattern[i]=="W":
                 #print("The option: W")
                 for j in possibilities:
                     if guess[i] in j:
@@ -11831,7 +11840,7 @@ class GuessWord(Widget):
                             p.remove(j)
                         except ValueError:
                             pass
-            if pattern[i]=="Y":
+            elif pattern[i]=="Y":
                 #print("The option: Y")
                 for j in possibilities:
                     if guess[i] not in j:
@@ -11846,8 +11855,9 @@ class GuessWord(Widget):
                             p.remove(j)
                         except ValueError:
                             pass
-
         return p
+    
+    
 
     
 class GuessWordApp(App):

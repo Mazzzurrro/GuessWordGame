@@ -24,7 +24,46 @@ def set_color(letter, color):
     COLORS_DICT  = {"W" : "ffffff", "Y" : "ffff00", "G" : "00ff00"}
     c = COLORS_DICT.get(color, "W")
     return f"[color={c}]{letter}[/color]"
-   
+
+class MyTextInput(TextInput):
+    focused = 'id1'
+
+    def change_focus(self, *args):
+        app = App.get_running_app()
+        if app.root is not None:
+            # Now access the container.
+            layout = app.root.ids["layout"]
+            # Access the required widget and set its focus.
+            print("Changefocus", MyTextInput.focused)
+            layout.ids[MyTextInput.focused].focus = True
+
+    def keyboard_on_key_down(self, window, keycode, text, modifiers):
+        focusedid = int(MyTextInput.focused[2])
+        if keycode[1] == "backspace":
+            if self.text=="":
+                if int(MyTextInput.focused[2]) > 1:
+                    self.text = ""
+                    focusedid -= 1
+                    MyTextInput.focused = "id" + str(focusedid)
+            else:
+                self.text = self.text[:-1]
+        if keycode[1] == "right":
+            if int(MyTextInput.focused[2]) < 5:
+                focusedid += 1
+                MyTextInput.focused = "id" + str(focusedid)
+            elif int(MyTextInput.focused[2]) == 5:
+                MyTextInput.focused = "id" + str(1)
+                
+        elif keycode[1] == "left":
+            if int(MyTextInput.focused[2]) > 1:
+                focusedid -= 1
+                MyTextInput.focused = "id" + str(focusedid)
+            elif int(MyTextInput.focused[2]) == 1:
+                MyTextInput.focused = "id" + str(5)                
+        self.change_focus()
+        print("After changing", MyTextInput.focused)
+        return True   
+    
 class GuessWord(Widget):
     
     """
@@ -11671,45 +11710,26 @@ class GuessWord(Widget):
         t5=self.ids['t5']
         listofletters=[t1,t2,t3,t4,t5]
         #outputstring=""
-        accurateletters=0
-        accuratecolor=[]
         self.answer=""
         for i in listofletters:
             self.answer+=i.text
-        for i in range(5):
-            listofletters[i].background_color=(1,1,1,1)
-        for i in range(len(listofletters)):
-            if listofletters[i].text.lower()=="":
-                #outputstring+=f'You have not filled {i+1} letter\n'
-                accuratecolor.append("W")
-            elif listofletters[i].text.lower() in self.word:
-                if listofletters[i].text.lower() == self.word[i]:
-                    accuratecolor.append("G")
-                    #listofletters[i].background_color=(0, 255/256, 0, 1)
-                    accurateletters+=1
-                    #outputstring+=f'{listofletters[i].text.upper()} - letter in accurate spot\n'
-                else:
-                    accuratecolor.append("Y")
-                    #listofletters[i].background_color=(228/256, 245/256, 39/256, 1)
-                    #outputstring+=f'{listofletters[i].text.upper()} - letter is in word, but not in this spot\n'
-            else:
-                accuratecolor.append("W")
-                #outputstring+=f'{listofletters[i].text.upper()} - no letter in the word\n'
-                #listofletters[i].bacground_color=(1,1,1,1)
-        self.accurateletters=accurateletters        
+        accuratecolorstr=self.SetPattern(self.answer,self.word)
+        accuratecolor=[]
+        for i in accuratecolorstr:
+            accuratecolor.append(i)     
         self.accuratecolor=accuratecolor
-        
+
         #Put actual information
         actualcombination=""
         for i in accuratecolor:
             actualcombination+=i
         self.actualcombination=actualcombination
         
-       
-        self.wordsentrophy=self.DeleteNotPossiblePattern(self.answer,self.wordsentrophy,accuratecolor)
+
+        self.wordsentrophy=self.DeleteNotPossiblePattern(self.answer,self.wordsentrophy,accuratecolorstr)
+
         uncertainty=math.log(len(self.wordsentrophy))/math.log(2)
-        print("Informacja",self.actualinformations)
-        print("Niepewnosc",self.uncertaintynumber)
+       
         actualinformation=self.uncertaintynumber-uncertainty
         self.uncertaintynumber=uncertainty
         self.actualinformations.append(actualinformation) 
@@ -11730,19 +11750,31 @@ class GuessWord(Widget):
     
     #SET pattern between solution and guess word
     def SetPattern(self,string,solution):
-        accuratecolor=""
+        accuratecolor=["0","1","2","3","4"]
         letters=self.SetDict(solution)
+        #print(f'Letters: {letters}')
         for i in range(len(solution)):
             if letters[string[i]]>0:
                 if string[i]==solution[i]:
-                    accuratecolor+="G"
+                    accuratecolor[i]="G"
                     letters[string[i]]-=1
-                else:
-                    accuratecolor+="Y"
-                    letters[string[i]]-=1
-            else:
-                accuratecolor+="W"
-        return accuratecolor
+        #print("G",accuratecolor)
+        
+        for j in range(len(solution)):
+            if letters[string[j]]>0:
+                if string[j] in solution and accuratecolor[j]!="G":
+                    accuratecolor[j]="Y"
+                    letters[string[j]]-=1
+                    
+        #print("Y",accuratecolor)            
+        for k in range(len(solution)):
+            if accuratecolor[k]!="G" and accuratecolor[k]!="Y":
+                accuratecolor[k]="W"
+        #print("W",accuratecolor)
+        accuratecolorstr=""
+        for l in range(len(solution)):
+            accuratecolorstr+=accuratecolor[l]
+        return accuratecolorstr
     
     def NumberofPatterns(self,pattern):
         self.dictionaryofoptions[pattern]=self.dictionaryofoptions[pattern]+1    
@@ -11774,12 +11806,8 @@ class GuessWord(Widget):
     
     def DeleteNotPossiblePattern(self,guess,possibilities,pattern):
         p=possibilities.copy()
-        print(guess)
-        print(pattern)
-        for i in range(len(pattern)):
-            #print(f'Pattern: {pattern[i]} Letter: {guess[i]}')                    
+        for i in range(len(pattern)):               
             if pattern[i]=="G":
-                #print("The option: G")
                 for j in possibilities:
                     if guess[i]!=j[i]:
                         #print(f'In word {j} the letter on {i+1} position is not equal')
@@ -11788,15 +11816,17 @@ class GuessWord(Widget):
                             p.remove(j)
                         except ValueError:
                             pass
+            
             if pattern[i]=="W":
                 #print("The option: W")
                 for j in possibilities:
-                    if guess[i] in j:
+                    if guess[i]==j[i]:
                         #print(f'In word {j} there is letter {guess[i]}')
                         try:
                             p.remove(j)
                         except ValueError:
                             pass
+            
             if pattern[i]=="Y":
                 #print("The option: Y")
                 for j in possibilities:
@@ -11815,7 +11845,7 @@ class GuessWord(Widget):
 
         return p
 
-      
+    """  
     def DeleteNotPossible(self,guess,possibilities,solution):
         pattern=self.SetPattern(guess,solution)
         p=possibilities.copy()
@@ -11856,7 +11886,7 @@ class GuessWord(Widget):
                         except ValueError:
                             pass
         return p
-    
+    """
     
 
     
